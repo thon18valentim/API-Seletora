@@ -1,12 +1,12 @@
 # API Seletora e Validadora de Transações - Universidade Positivo
 API para seleção de validadores e validação de transações.
 
-# Envolvidos no Projeto
+## Envolvidos no Projeto
 - Bernardo Carneiro
 - Heitor Hellou
 - Othon Valentim
 
-# Sobre a aplicação
+## Sobre a aplicação
 A aplicação foi desenvolvida para receber transações financeiras, de uma rede blockchain simulada, de um gerenciador e selecionar Validadores para a transação em questão. Essa API pode atuar tanto como seletora como validadora, dependendo do status da transação.
 
 ## Arquitetura
