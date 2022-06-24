@@ -55,7 +55,23 @@ namespace Transacoes_blockchain.infra.data
     {
       try
       {
-        string sql = $"CREATE TABLE IF NOT EXISTS Validadores (id int, nome Varchar(20), ip Varchar(20))";
+        string sql = $"CREATE TABLE IF NOT EXISTS Validadores (id int, nome Varchar(20), ip Varchar(20), stake int)";
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(sql, connection);
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static void CriarTabelaTempoSQlite()
+    {
+      try
+      {
+        string sql = $"CREATE TABLE IF NOT EXISTS Tempo (time Varchar(20))";
         var connection = DbConnection();
         SQLiteCommand cmd = new(sql, connection);
         cmd.ExecuteNonQuery();
@@ -114,12 +130,43 @@ namespace Transacoes_blockchain.infra.data
           {
             Id = dr.GetInt32(0),
             Nome = dr.GetString(1),
-            Ip = dr.GetString(2)
+            Ip = dr.GetString(2),
+            Stake = dr.GetInt32(3)
           };
           list.Add(validador);
         }
         connection.Close();
         return list;
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static string GetApiTime()
+    {
+      try
+      {
+        string sql = $"SELECT * FROM Tempo";
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(sql, connection);
+        SQLiteDataReader dr = cmd.ExecuteReader();
+
+        List<string> list = new();
+        while (dr.Read())
+        {
+          var tempo = dr.GetString(0);
+          list.Add(tempo);
+        }
+        connection.Close();
+        list.Reverse();
+        
+        if(list.Count == 0)
+        {
+          return "";
+        }
+        return list[0];
       }
       catch
       {
@@ -186,6 +233,25 @@ namespace Transacoes_blockchain.infra.data
       }
     }
 
+    public static void AddTempo(string tempo)
+    {
+      try
+      {
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = "INSERT INTO Tempo (tempo ) values (@tempo)";
+        cmd.Parameters.AddWithValue("@Tempo", tempo);
+        
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
     public static void AddValidador(Validador validador)
     {
       try
@@ -193,10 +259,11 @@ namespace Transacoes_blockchain.infra.data
         var connection = DbConnection();
         SQLiteCommand cmd = new(connection);
 
-        cmd.CommandText = "INSERT INTO Validadores (id, nome, ip ) values (@id, @nome, @ip)";
+        cmd.CommandText = "INSERT INTO Validadores (id, nome, ip, stake ) values (@id, @nome, @ip, @stake)";
         cmd.Parameters.AddWithValue("@Id", validador.Id);
         cmd.Parameters.AddWithValue("@Nome", validador.Nome);
         cmd.Parameters.AddWithValue("@Ip", validador.Ip);
+        cmd.Parameters.AddWithValue("@stake", validador.Stake);
 
         cmd.ExecuteNonQuery();
         connection.Close();
@@ -219,21 +286,6 @@ namespace Transacoes_blockchain.infra.data
 
         cmd.ExecuteNonQuery();
         connection.Close();
-      }
-      catch
-      {
-        throw;
-      }
-    }
-
-    public static void AddSyncTime(int time)
-    {
-      try
-      {
-        using var cmd = DbConnection().CreateCommand();
-        cmd.CommandText = "INSERT INTO Horarios(time ) values (@time)";
-        cmd.Parameters.AddWithValue("@Time", time);
-        cmd.ExecuteNonQuery();
       }
       catch
       {

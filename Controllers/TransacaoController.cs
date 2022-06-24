@@ -27,10 +27,11 @@ namespace Transacoes_blockchain.Controllers
     [HttpPost]
     public async Task<ActionResult> InserirTransacao(Transacao transacao)
     {
+      var horario = "";
       try
       {
         GerenciadorIntegracao integra = new();
-        var horario = await integra.ObterHorarioGerenciador();
+        horario = await integra.ObterHorarioGerenciador();
       }
       catch
       {
@@ -44,7 +45,9 @@ namespace Transacoes_blockchain.Controllers
       }
 
       // sync time
+      SyncTime.CristianSyncTime(horario);
 
+      // Recebendo transacoes como seletor
       if(transacao.Status == 0)
       {
         // carregando validadores cadastrados
@@ -62,6 +65,9 @@ namespace Transacoes_blockchain.Controllers
           validadores[index].Ip = validador.Ip.Replace("-", ".");
           index++;
         }
+
+        validadores = validadores.OrderBy(x => x.Stake).ToList();
+        validadores.Reverse();
 
         // selecionando validadores
         List<Validador> selecionados = new();
@@ -81,13 +87,54 @@ namespace Transacoes_blockchain.Controllers
             break;
         }
 
+        // setando transacao para 'Em Processamento'
+        transacao.Status = 3;
+
         // cadastrando transacao
         DalHelper.AddTransacao(transacao);
 
+        //List<string> responseList = new();
+        //try
+        //{
+        //  ValidadorIntegracao validadorIntegracao = new();
+
+        //  foreach (var validador in selecionados)
+        //  {
+        //    var response = await validadorIntegracao.SelecionarValidador($"http://{validador.Ip}/Transacao");
+        //    responseList.Add(response);
+        //  }
+        //}
+        //catch (Exception ex)
+        //{
+        //  return StatusCode(500, ex.Message);
+        //}
+
         return Ok(selecionados);
+      }
+
+      // recebendo transacao como validador
+      if(transacao.Status == 3)
+      {
+
       }
       
       return Ok();
     }
+
+    [HttpPost("/resultado")]
+    public async Task<ActionResult> InserirResultadoTransacao(Transacao transacao)
+    {
+      // fazer eleicao
+      if(transacao.Status == 1)
+      {
+
+      }
+      else
+      {
+
+      }
+
+      return Ok();
+    } 
   }
 }

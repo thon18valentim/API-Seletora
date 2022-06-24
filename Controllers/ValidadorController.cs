@@ -42,6 +42,18 @@ namespace Transacoes_blockchain.Controllers
       try
       {
         var validadores = DalHelper.GetValidadores();
+
+        // corrigindo Ip de validadores
+        int index = 0;
+        foreach (var validador in validadores)
+        {
+          validadores[index].Ip = validador.Ip.Replace("-", ".");
+          index++;
+        }
+
+        validadores = validadores.OrderBy(x => x.Stake).ToList();
+        validadores.Reverse();
+
         return Ok(validadores);
       }
       catch (Exception ex)

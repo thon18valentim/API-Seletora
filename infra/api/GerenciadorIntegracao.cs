@@ -1,7 +1,5 @@
-﻿using Newtonsoft.Json;
-using RestSharp;
+﻿using RestSharp;
 using Transacoes_blockchain.config;
-using Transacoes_blockchain.domain;
 
 namespace Transacoes_blockchain.infra.api
 {

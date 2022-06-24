@@ -12,5 +12,8 @@ namespace Transacoes_blockchain
 
     [JsonProperty("ip")]
     public string? Ip { get; set; }
+
+    [JsonProperty("stake")]
+    public int Stake { get; set; }
   }
 }

@@ -4,7 +4,7 @@ namespace Transacoes_blockchain.domain
 {
   public class GerenciadorTimeStamp
   {
-    [JsonProperty("objeto")]
+    [JsonProperty("time")]
     public DateTime Time { get; set; }
   }
 }

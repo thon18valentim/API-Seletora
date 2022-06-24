@@ -11,5 +11,10 @@
     {
       return (int)Math.Truncate((DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds);
     }
+
+    public static string CristianSyncTime(string tempoRecebido)
+    {
+      return "";
+    }
   }
 }

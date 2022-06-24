@@ -24,7 +24,7 @@ namespace Transacoes_blockchain
     */
     public bool Validate()
     {
-      if(Status < 0 || Status > 2)
+      if(Status < 0 || Status > 3)
       {
         return false;
       }
