@@ -15,6 +15,10 @@ Projeto com arquitetura baseada em:
 - SQLite
 - Clean Architecture
 
+## Dependências
+- RestSharp
+- Newtonsoft Json
+
 ## Como executar o projeto
 Rode o projeto de preferência no Visual Studio 2022. Você pode utilizar o próprio swagger para enviar as requisições ou o Postman.
 
@@ -55,7 +59,7 @@ Após cadastrar os validadores podemos enviar a nossa primeira transação. Util
 - Seleciona validadores por stake
 - Envia transação para validadores
 - Eleje o resultado da transação
-- Atualiza transaçõ no gerenciador
+- Atualiza transação no gerenciador
 
 ## Rotas adicionais
 Para consultar as transações armazenadas no banco basta chamar a rota GET abaixo:
