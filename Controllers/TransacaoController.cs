@@ -91,7 +91,7 @@ namespace Transacoes_blockchain.Controllers
             try
             {
               // Não há eleição
-              var resposta = await validadorIntegracao.SelecionarValidador($"http://{validadores[0].Ip}/Transacao", transacao);
+              var resposta = await validadorIntegracao.SelecionarValidador($"https://{validadores[0].Ip}/Transacao", transacao);
               transacao.Status = resposta;
               var resultado =  await gerenciadorIntegracao.AtualizarStatusTransacao(transacao);
 
@@ -107,9 +107,9 @@ namespace Transacoes_blockchain.Controllers
             try
             {
               List<int> respostas = new();
-              respostas.Add(await validadorIntegracao.SelecionarValidador($"http://{validadores[0].Ip}/Transacao", transacao));
-              respostas.Add(await validadorIntegracao.SelecionarValidador($"http://{validadores[1].Ip}/Transacao", transacao));
-              respostas.Add(await validadorIntegracao.SelecionarValidador($"http://{validadores[2].Ip}/Transacao", transacao));
+              respostas.Add(await validadorIntegracao.SelecionarValidador($"https://{validadores[0].Ip}/Transacao", transacao));
+              respostas.Add(await validadorIntegracao.SelecionarValidador($"https://{validadores[1].Ip}/Transacao", transacao));
+              respostas.Add(await validadorIntegracao.SelecionarValidador($"https://{validadores[2].Ip}/Transacao", transacao));
 
               var resposta = respostas.FindMostCommon();
 

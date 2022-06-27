@@ -53,9 +53,8 @@ namespace Transacoes_blockchain.infra.api
 
         return retorno;
       }
-      catch (Exception e)
+      catch
       {
-        Console.WriteLine(e.Message);
         return -1;
       }
     }
