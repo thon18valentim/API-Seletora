@@ -86,3 +86,5 @@ O ip que será cadastrado junto ao validador deve estar no seguinte modelo: 0-0-
 Por conta de limitações do banco SQLite é crucial que o modelo seja seguido. No momento das requisições os IPs serão corrigidos pelo sistema, dessa maneira não causando problemas em nenhuma das pontas.
 
 A escolha de validadores será sempre baseada no valor do stake, que pode ser alterado dependendo da resposta do validador.
+
+O projeto do validador pode ser encontrado nesse [link](https://github.com/thon18valentim/ps-validador-api/blob/main/README.md).
