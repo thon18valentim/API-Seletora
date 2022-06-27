@@ -6,6 +6,7 @@ namespace Transacoes_blockchain.config
   {
     public string? UrlBase { get; set; }
     public string? HorarioUrl { get; set; }
+    public string? Transacao { get; set; }
   }
 
   public static class BuildGerenciadorConfiguracao

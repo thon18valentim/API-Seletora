@@ -39,7 +39,7 @@ namespace Transacoes_blockchain.infra.data
     {
       try
       {
-        string sql = $"CREATE TABLE IF NOT EXISTS Transacoes (id int, remetente int, recebedor int, valor int, status int)";
+        string sql = $"CREATE TABLE IF NOT EXISTS Transacoes (id int, remetente int, recebedor int, valor int, horario Varchar(20), status int)";
         var connection = DbConnection();
         SQLiteCommand cmd = new (sql, connection);
         cmd.ExecuteNonQuery();
@@ -56,6 +56,22 @@ namespace Transacoes_blockchain.infra.data
       try
       {
         string sql = $"CREATE TABLE IF NOT EXISTS Validadores (id int, nome Varchar(20), ip Varchar(20), stake int)";
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(sql, connection);
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static void CriarTabelaChaveUnicaValidadoresSQlite()
+    {
+      try
+      {
+        string sql = $"CREATE TABLE IF NOT EXISTS ChaveUnica (id int, chave Varchar(20))";
         var connection = DbConnection();
         SQLiteCommand cmd = new(sql, connection);
         cmd.ExecuteNonQuery();
@@ -101,7 +117,8 @@ namespace Transacoes_blockchain.infra.data
             Remetente = dr.GetInt32(1),
             Recebedor = dr.GetInt32(2),
             Valor = dr.GetInt32(3),
-            Status = dr.GetInt32(4)
+            Horario = dr.GetString(4),
+            Status = dr.GetInt32(5)
           };
           list.Add(transacao);
         }
@@ -137,6 +154,57 @@ namespace Transacoes_blockchain.infra.data
         }
         connection.Close();
         return list;
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static List<string> GetChaveUnica()
+    {
+      try
+      {
+        string sql = $"SELECT * FROM ChaveUnica";
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(sql, connection);
+        SQLiteDataReader dr = cmd.ExecuteReader();
+
+        List<string> chaves = new();
+        while (dr.Read())
+        {
+          chaves.Add(dr.GetString(1));
+        }
+        connection.Close();
+
+        return chaves;
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static string GetUmaChaveUnica(int id)
+    {
+      try
+      {
+        string sql = $"SELECT * FROM ChaveUnica";
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(sql, connection);
+        SQLiteDataReader dr = cmd.ExecuteReader();
+
+        var chave = "";
+        while (dr.Read())
+        {
+          if(dr.GetInt32(0) == id)
+          {
+            chave = dr.GetString(1);
+          }
+        }
+        connection.Close();
+
+        return chave;
       }
       catch
       {
@@ -221,9 +289,17 @@ namespace Transacoes_blockchain.infra.data
     {
       try
       {
-        string sql = $"INSERT INTO Transacoes (id, remetente, recebedor, valor, status ) values ({transacao.Id}, {transacao.Remetente}, {transacao.Recebedor}, {transacao.Valor}, {transacao.Status})";
         var connection = DbConnection();
-        SQLiteCommand cmd = new(sql, connection);
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = $"INSERT INTO Transacoes (id, remetente, recebedor, valor, horario, status ) values (@id, @remetente, @recebedor, @valor, @horario, @status)";
+        cmd.Parameters.AddWithValue("@Id", transacao.Id);
+        cmd.Parameters.AddWithValue("@Remetente", transacao.Remetente);
+        cmd.Parameters.AddWithValue("@Recebedor", transacao.Recebedor);
+        cmd.Parameters.AddWithValue("@Valor", transacao.Valor);
+        cmd.Parameters.AddWithValue("@Horario", transacao.Horario);
+        cmd.Parameters.AddWithValue("@Status", transacao.Status);
+
         cmd.ExecuteNonQuery();
         connection.Close();
       }
@@ -264,6 +340,26 @@ namespace Transacoes_blockchain.infra.data
         cmd.Parameters.AddWithValue("@Nome", validador.Nome);
         cmd.Parameters.AddWithValue("@Ip", validador.Ip);
         cmd.Parameters.AddWithValue("@stake", validador.Stake);
+
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static void AddChaveUnica(int id, string chave)
+    {
+      try
+      {
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = "INSERT INTO ChaveUnica (id, chave) values (@id, @chave)";
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@Chave", chave);
 
         cmd.ExecuteNonQuery();
         connection.Close();

@@ -9,6 +9,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//builder.WebHost.UseUrls("http://localhost:5000", "http://192.168.1.2:5000");
 
 var app = builder.Build();
 
@@ -26,3 +27,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+//app.Run("https://*:8080");

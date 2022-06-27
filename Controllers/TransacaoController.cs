@@ -27,11 +27,22 @@ namespace Transacoes_blockchain.Controllers
     [HttpPost]
     public async Task<ActionResult> InserirTransacao(Transacao transacao)
     {
+      // coletando horario
+      GerenciadorIntegracao gerenciadorIntegracao = new();
       var horario = "";
+      var horarioFormatado = 0f;
+      var horarioRequisicao = 0f;
+      var horarioRecebimento = 0f;
       try
       {
-        GerenciadorIntegracao integra = new();
-        horario = await integra.ObterHorarioGerenciador();
+        DateTime foo = DateTime.Now;
+        horarioRequisicao = ((DateTimeOffset)foo).ToUnixTimeSeconds();
+
+        horario = await gerenciadorIntegracao.ObterHorarioGerenciador();
+        foo = DateTime.Now;
+        horarioRecebimento = ((DateTimeOffset)foo).ToUnixTimeSeconds();
+
+        horarioFormatado = float.Parse(horario);
       }
       catch
       {
@@ -45,7 +56,7 @@ namespace Transacoes_blockchain.Controllers
       }
 
       // sync time
-      SyncTime.CristianSyncTime(horario);
+      var tempo = SyncTime.CristianSyncTime(horarioFormatado, horarioRequisicao, horarioRecebimento);
 
       // Recebendo transacoes como seletor
       if(transacao.Status == 0)
@@ -69,71 +80,59 @@ namespace Transacoes_blockchain.Controllers
         validadores = validadores.OrderBy(x => x.Stake).ToList();
         validadores.Reverse();
 
-        // selecionando validadores
-        List<Validador> selecionados = new();
-        switch (validadoresCount)
-        {
-          case 1:
-            selecionados.Add(validadores[0]);
-            break;
-          case 2:
-            selecionados.Add(validadores[0]);
-            selecionados.Add(validadores[1]);
-            break;
-          default:
-            selecionados.Add(validadores[0]);
-            selecionados.Add(validadores[1]);
-            selecionados.Add(validadores[2]);
-            break;
-        }
-
-        // setando transacao para 'Em Processamento'
-        transacao.Status = 3;
-
         // cadastrando transacao
         DalHelper.AddTransacao(transacao);
 
-        //List<string> responseList = new();
-        //try
-        //{
-        //  ValidadorIntegracao validadorIntegracao = new();
+        // selecionando validadores
+        ValidadorIntegracao validadorIntegracao = new();
+        switch (validadoresCount)
+        {
+          case 1:
+            try
+            {
+              // Não há eleição
+              var resposta = await validadorIntegracao.SelecionarValidador($"http://{validadores[0].Ip}/Transacao", transacao);
+              transacao.Status = resposta;
+              var resultado =  await gerenciadorIntegracao.AtualizarStatusTransacao(transacao);
 
-        //  foreach (var validador in selecionados)
-        //  {
-        //    var response = await validadorIntegracao.SelecionarValidador($"http://{validador.Ip}/Transacao");
-        //    responseList.Add(response);
-        //  }
-        //}
-        //catch (Exception ex)
-        //{
-        //  return StatusCode(500, ex.Message);
-        //}
+              return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+              return StatusCode(500, ex.Message);
+            }
+          case 2:
+            return StatusCode(500, "Não há a quantidade correta de validadores para uma eleição, cadastre ao menos 3");
+          default:
+            try
+            {
+              List<int> respostas = new();
+              respostas.Add(await validadorIntegracao.SelecionarValidador($"http://{validadores[0].Ip}/Transacao", transacao));
+              respostas.Add(await validadorIntegracao.SelecionarValidador($"http://{validadores[1].Ip}/Transacao", transacao));
+              respostas.Add(await validadorIntegracao.SelecionarValidador($"http://{validadores[2].Ip}/Transacao", transacao));
 
-        return Ok(selecionados);
-      }
+              var resposta = respostas.FindMostCommon();
 
-      // recebendo transacao como validador
-      if(transacao.Status == 3)
-      {
+              // Validadores offline
+              if (resposta == -1)
+              {
+                transacao.Status = 2;
+                await gerenciadorIntegracao.AtualizarStatusTransacao(transacao);
+                return Ok(resposta);
+              }
 
+              transacao.Status = resposta;
+              await gerenciadorIntegracao.AtualizarStatusTransacao(transacao);
+
+              return Ok(resposta);
+            }
+            catch (Exception ex)
+            {
+              return StatusCode(500, ex.Message);
+            }
+        }
       }
       
-      return Ok();
-    }
-
-    [HttpPost("/resultado")]
-    public async Task<ActionResult> InserirResultadoTransacao(Transacao transacao)
-    {
-      // fazer eleicao
-      if(transacao.Status == 1)
-      {
-
-      }
-      else
-      {
-
-      }
-
       return Ok();
     } 
   }

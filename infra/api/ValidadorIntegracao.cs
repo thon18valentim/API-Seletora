@@ -1,4 +1,5 @@
 ﻿using RestSharp;
+using Transacoes_blockchain.domain;
 using Transacoes_blockchain.infra.data;
 
 namespace Transacoes_blockchain.infra.api
@@ -7,25 +8,55 @@ namespace Transacoes_blockchain.infra.api
   {
     private RestClient restClient;
 
-    public async Task<string> SelecionarValidador(string url)
+    public async Task EnviarChaveUnica(string url, Chave chaveUnica)
     {
       try
       {
-        restClient = new RestClient();
+        var options = new RestClientOptions(url)
+        {
+          RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+        };
+
+        restClient = new RestClient(options);
         var request = new RestRequest()
         {
           Resource = url,
           Method = Method.Post
         };
+        request.AddJsonBody(chaveUnica);
 
-        var response = await restClient.PostAsync(request);
-        var retorno = response.Content ?? "";
-
-        return retorno;
+        await restClient.PostAsync(request);
       }
       catch
       {
         throw;
+      }
+    }
+
+    public async Task<int> SelecionarValidador(string url, Transacao transacao)
+    {
+      try
+      {
+        var options = new RestClientOptions(url)
+        {
+          RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+        };
+        restClient = new RestClient(options);
+        var request = new RestRequest(url)
+        {
+          Method = Method.Post
+        };
+        request.AddJsonBody(transacao);
+
+        var response = await restClient.PostAsync(request);
+        var retorno = int.Parse(response.Content ?? "2");
+
+        return retorno;
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e.Message);
+        return -1;
       }
     }
   }

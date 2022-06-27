@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Transacoes_blockchain.infra.api;
 using Transacoes_blockchain.infra.data;
+using Transacoes_blockchain.utils;
+using Transacoes_blockchain.domain;
 
 namespace Transacoes_blockchain.Controllers
 {
@@ -13,7 +15,16 @@ namespace Transacoes_blockchain.Controllers
     {
       try
       {
+        ValidadorIntegracao validadorIntegracao = new();
+
         DalHelper.AddValidador(validador);
+
+        var chave = GeraChaveUnica.GerarChaveUnica();
+        DalHelper.AddChaveUnica(validador.Id, chave);
+        Chave chaveUnica = new(chave);
+        var url = validador.Ip.Replace("-", ".");
+        await validadorIntegracao.EnviarChaveUnica($"https://{url}/Chave", chaveUnica);
+
         return Ok($"Validador {validador.Nome} inserido com sucesso");
       }
       catch (Exception ex)
@@ -55,6 +66,24 @@ namespace Transacoes_blockchain.Controllers
         validadores.Reverse();
 
         return Ok(validadores);
+      }
+      catch (Exception ex)
+      {
+        return BadRequest(ex.Message);
+      }
+    }
+
+    [HttpGet("chave/{chave}")]
+    public async Task<ActionResult> ComparaChaves(string chave)
+    {
+      try
+      {
+        var chaves = DalHelper.GetChaveUnica();
+        if (chaves.Contains(chave))
+        {
+          return Ok(1);
+        }
+        return Ok(2);
       }
       catch (Exception ex)
       {

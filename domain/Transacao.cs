@@ -16,6 +16,9 @@ namespace Transacoes_blockchain
     [JsonProperty("valor")]
     public int Valor { get; set; }
 
+    [JsonProperty("horario")]
+    public string Horario { get; set; }
+
     [JsonProperty("status")]
     public int Status { get; set; }
 

@@ -21,6 +21,7 @@ namespace Transacoes_blockchain.services
       DalHelper.CriarTabelaTransacoesSQlite();
       DalHelper.CriarTabelaValidadoresSQlite();
       DalHelper.CriarTabelaTempoSQlite();
+      DalHelper.CriarTabelaChaveUnicaValidadoresSQlite();
     }
   }
 }
