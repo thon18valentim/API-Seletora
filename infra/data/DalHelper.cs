@@ -99,6 +99,22 @@ namespace Transacoes_blockchain.infra.data
       }
     }
 
+    public static void CriarTabelaPunicoes()
+    {
+      try
+      {
+        string sql = $"CREATE TABLE IF NOT EXISTS Punicoes (id int, erros int, ativa int, inicio Varchar(20))";
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(sql, connection);
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
     public static List<Transacao> GetTransacoes()
     {
       try
@@ -242,13 +258,15 @@ namespace Transacoes_blockchain.infra.data
       }
     }
 
-    public static Transacao GetById(string table, int id)
+    public static Transacao GetTransacaoById(int id)
     {
       try
       {
-        string sql = $"SELECT * FROM {table} Where Id={id}";
         var connection = DbConnection();
-        SQLiteCommand cmd = new(sql, connection);
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = $"SELECT * FROM Transacoes Where Id=@id";
+        cmd.Parameters.AddWithValue("@Id", id);
         SQLiteDataReader dr = cmd.ExecuteReader();
 
         var transacao = new Transacao();
@@ -258,10 +276,40 @@ namespace Transacoes_blockchain.infra.data
           transacao.Remetente = dr.GetInt32(1);
           transacao.Recebedor = dr.GetInt32(2);
           transacao.Valor = dr.GetInt32(3);
-          transacao.Status = dr.GetInt32(4);
+          transacao.Horario = dr.GetString(4);
+          transacao.Status = dr.GetInt32(5);
         }
         connection.Close();
         return transacao;
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static Punicao VerificarPunicao(int id)
+    {
+      try
+      {
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = $"SELECT * FROM Punicoes Where Id=@id";
+        cmd.Parameters.AddWithValue("@Id", id);
+        SQLiteDataReader dr = cmd.ExecuteReader();
+
+        var punicao = new Punicao();
+        while (dr.Read())
+        {
+          punicao.Id = dr.GetInt32(0);
+          punicao.Erros = dr.GetInt32(1);
+          punicao.Ativa = dr.GetInt32(2);
+          punicao.Inicio = dr.GetString(3);
+        }
+
+        connection.Close();
+        return punicao;
       }
       catch
       {
@@ -370,6 +418,28 @@ namespace Transacoes_blockchain.infra.data
       }
     }
 
+    public static void AddPunicao(int id)
+    {
+      try
+      {
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = "INSERT INTO Punicoes (id, erros, ativa, inicio) values (@id, @erros, @ativa, @inicio)";
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@Erros", 1);
+        cmd.Parameters.AddWithValue("@Ativa", 0);
+        cmd.Parameters.AddWithValue("@Inicio", "0");
+
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
     public static void DeleteValidador(int id)
     {
       try
@@ -379,6 +449,58 @@ namespace Transacoes_blockchain.infra.data
 
         cmd.CommandText = "DELETE FROM Validadores Where Id=@id";
         cmd.Parameters.AddWithValue("@Id", id);
+
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static void UpdateValidador(Validador validador)
+    {
+      try
+      {
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = "UPDATE Validadores SET Stake=@stake WHERE Id=@Id";
+        cmd.Parameters.AddWithValue("@Id", validador.Id);
+        cmd.Parameters.AddWithValue("@Stake", validador.Stake);
+
+        cmd.ExecuteNonQuery();
+        connection.Close();
+      }
+      catch
+      {
+        throw;
+      }
+    }
+
+    public static void UpdatePunicao(int id, int erros, int ativa)
+    {
+      try
+      {
+        var connection = DbConnection();
+        SQLiteCommand cmd = new(connection);
+
+        cmd.CommandText = "UPDATE Punicoes SET Erros=@erros, Ativa=@ativa, Inicio=@inicio WHERE Id=@Id";
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@Erros", erros);
+        cmd.Parameters.AddWithValue("@Ativa", ativa);
+
+        if(ativa == 1)
+        {
+          DateTime foo = DateTime.Now;
+          var horario = ((DateTimeOffset)foo).ToUnixTimeSeconds().ToString();
+          cmd.Parameters.AddWithValue("@Inicio", horario);
+        }
+        else
+        {
+          cmd.Parameters.AddWithValue("@Inicio", "0");
+        }
 
         cmd.ExecuteNonQuery();
         connection.Close();

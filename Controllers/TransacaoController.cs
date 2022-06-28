@@ -20,13 +20,22 @@ namespace Transacoes_blockchain.Controllers
     [HttpGet("{id}")]
     public async Task<ActionResult<Transacao>> GetTransacao(int id)
     {
-      var transacao = DalHelper.GetById("Transacoes", id);
+      var transacao = DalHelper.GetTransacaoById(id);
       return Ok(transacao);
     }
 
     [HttpPost]
     public async Task<ActionResult> InserirTransacao(Transacao transacao)
     {
+      // verificando se cliente não tem punição
+      DateTime horarioSistema = DateTime.Now;
+      var punicaoAtiva = DalHelper.VerificarPunicao(transacao.Remetente);
+      if (punicaoAtiva.Ativa == 1)
+      {
+        var tempoPunicao = ((DateTimeOffset)horarioSistema).ToUnixTimeSeconds() - float.Parse(punicaoAtiva.Inicio);
+        return StatusCode(423, $"Cliente {punicaoAtiva.Id} tem uma punição ativa");
+      }
+
       // coletando horario
       GerenciadorIntegracao gerenciadorIntegracao = new();
       var horario = "";
@@ -35,12 +44,11 @@ namespace Transacoes_blockchain.Controllers
       var horarioRecebimento = 0f;
       try
       {
-        DateTime foo = DateTime.Now;
-        horarioRequisicao = ((DateTimeOffset)foo).ToUnixTimeSeconds();
+        horarioRequisicao = ((DateTimeOffset)horarioSistema).ToUnixTimeSeconds();
 
         horario = await gerenciadorIntegracao.ObterHorarioGerenciador();
-        foo = DateTime.Now;
-        horarioRecebimento = ((DateTimeOffset)foo).ToUnixTimeSeconds();
+        horarioSistema = DateTime.Now;
+        horarioRecebimento = ((DateTimeOffset)horarioSistema).ToUnixTimeSeconds();
 
         horarioFormatado = float.Parse(horario);
       }
@@ -58,8 +66,7 @@ namespace Transacoes_blockchain.Controllers
       // sync time
       var tempo = SyncTime.CristianSyncTime(horarioFormatado, horarioRequisicao, horarioRecebimento);
 
-      // Recebendo transacoes como seletor
-      if(transacao.Status == 0)
+      if (transacao.Status == 0)
       {
         // carregando validadores cadastrados
         var validadores = DalHelper.GetValidadores();
@@ -95,6 +102,50 @@ namespace Transacoes_blockchain.Controllers
               transacao.Status = resposta;
               var resultado =  await gerenciadorIntegracao.AtualizarStatusTransacao(transacao);
 
+              // Aplicar punição a cliente
+              var punicao = DalHelper.VerificarPunicao(transacao.Remetente);
+              if (resposta == 2)
+              {
+                // Incrementando erros
+                punicao.Erros++;
+                if (punicao.Id != 0)
+                {
+                  if (punicao.Erros > 3)
+                  {
+                    // punindo cliente se punicao não estiver ativa
+                    // se estiver ativa e cliente continua errando continue ampliando a punicao
+                    DalHelper.UpdatePunicao(transacao.Remetente, punicao.Erros, 1);
+                  }
+                  else
+                  {
+                    // atualiza punicao com o numero de erros, vale ressaltar que esse 
+                    // cliente ainda não é elegível a punição
+                    DalHelper.UpdatePunicao(transacao.Remetente, punicao.Erros, 0);
+                  }
+                }
+                else
+                {
+                  // Iniciando contagem de erros
+                  DalHelper.AddPunicao(transacao.Remetente);
+                }
+              }
+              else
+              {
+                if (punicao.Ativa == 1)
+                {
+                  // se estiver ativa verificamos quanto tempo falta
+                  var inicioDaPunicao = float.Parse(punicao.Inicio);
+                  DateTime foo = DateTime.Now;
+                  var horarioAtual = ((DateTimeOffset)foo).ToUnixTimeSeconds();
+
+                  // retirando punicao
+                  if (horarioAtual - inicioDaPunicao >= 300)
+                  {
+                    DalHelper.UpdatePunicao(transacao.Remetente, 0, 0);
+                  }
+                }
+              }
+
               return Ok(resultado);
             }
             catch (Exception ex)
@@ -123,6 +174,108 @@ namespace Transacoes_blockchain.Controllers
 
               transacao.Status = resposta;
               await gerenciadorIntegracao.AtualizarStatusTransacao(transacao);
+
+              // Aplicando punicoes em Validadores
+              if(respostas[0] != resposta)
+              {
+                validadores[0].Stake -= 3;
+                if(validadores[0].Stake < 0)
+                {
+                  validadores[0].Stake = 0;
+                }
+                DalHelper.UpdateValidador(validadores[0]);
+              }
+              if (respostas[1] != resposta)
+              {
+                validadores[1].Stake -= 3;
+                if (validadores[1].Stake < 0)
+                {
+                  validadores[1].Stake = 0;
+                }
+                DalHelper.UpdateValidador(validadores[1]);
+              }
+              if (respostas[2] != resposta)
+              {
+                validadores[2].Stake -= 3;
+                if (validadores[2].Stake < 0)
+                {
+                  validadores[2].Stake = 0;
+                }
+                DalHelper.UpdateValidador(validadores[2]);
+              }
+
+              // Aplicar premiação aos Validadores
+              if (respostas[0] == resposta)
+              {
+                validadores[0].Stake += 5;
+                if (validadores[0].Stake > 50)
+                {
+                  validadores[0].Stake = 50;
+                }
+                DalHelper.UpdateValidador(validadores[0]);
+              }
+              if (respostas[1] == resposta)
+              {
+                validadores[1].Stake += 5;
+                if (validadores[1].Stake > 50)
+                {
+                  validadores[1].Stake = 50;
+                }
+                DalHelper.UpdateValidador(validadores[1]);
+              }
+              if (respostas[2] == resposta)
+              {
+                validadores[2].Stake += 5;
+                if (validadores[2].Stake > 50)
+                {
+                  validadores[2].Stake = 50;
+                }
+                DalHelper.UpdateValidador(validadores[2]);
+              }
+
+              // Aplicar punição a cliente
+              var punicao = DalHelper.VerificarPunicao(transacao.Remetente);
+              if (resposta == 2)
+              {
+                // Incrementando erros
+                punicao.Erros++;
+                if (punicao.Id != 0)
+                {
+                  if(punicao.Erros > 3)
+                  {
+                    // punindo cliente se punicao não estiver ativa
+                    // se estiver ativa e cliente continua errando continue ampliando a punicao
+                    DalHelper.UpdatePunicao(transacao.Remetente, punicao.Erros, 1);
+                  }
+                  else
+                  {
+                    // atualiza punicao com o numero de erros, vale ressaltar que esse 
+                    // cliente ainda não é elegível a punição
+                    DalHelper.UpdatePunicao(transacao.Remetente, punicao.Erros, 0);
+                  }
+                }
+                else
+                {
+                  // Iniciando contagem de erros
+                  DalHelper.AddPunicao(transacao.Remetente);
+                }
+              }
+              else
+              {
+                if(punicao.Ativa == 1)
+                {
+                  // se estiver ativa verificamos quanto tempo falta
+                  var inicioDaPunicao = float.Parse(punicao.Inicio);
+                  DateTime foo = DateTime.Now;
+                  var horarioAtual = ((DateTimeOffset)foo).ToUnixTimeSeconds();
+
+                  // retirando punicao
+                  if (horarioAtual - inicioDaPunicao >= 300)
+                  {
+                    DalHelper.UpdatePunicao(transacao.Remetente, 0, 0);
+                  }
+                }
+              }
 
               return Ok(resposta);
             }
