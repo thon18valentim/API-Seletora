@@ -32,8 +32,19 @@ namespace Transacoes_blockchain.Controllers
       var punicaoAtiva = DalHelper.VerificarPunicao(transacao.Remetente);
       if (punicaoAtiva.Ativa == 1)
       {
-        var tempoPunicao = ((DateTimeOffset)horarioSistema).ToUnixTimeSeconds() - float.Parse(punicaoAtiva.Inicio);
-        return StatusCode(423, $"Cliente {punicaoAtiva.Id} tem uma punição ativa");
+        var horarioSistemaUnix = ((DateTimeOffset)horarioSistema).ToUnixTimeSeconds();
+        var inicioDaPunicao = float.Parse(punicaoAtiva.Inicio);
+
+        // retirando punicao
+        if (horarioSistemaUnix - inicioDaPunicao >= 300)
+        {
+          DalHelper.UpdatePunicao(transacao.Remetente, 0, 0);
+        }
+        else
+        {
+          var tempoPunicao = horarioSistemaUnix - float.Parse(punicaoAtiva.Inicio);
+          return StatusCode(423, $"Cliente {punicaoAtiva.Id} tem uma punição ativa");
+        }
       }
 
       // coletando horario

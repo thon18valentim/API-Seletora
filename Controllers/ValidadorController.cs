@@ -17,13 +17,13 @@ namespace Transacoes_blockchain.Controllers
       {
         ValidadorIntegracao validadorIntegracao = new();
 
-        DalHelper.AddValidador(validador);
-
         var chave = GeraChaveUnica.GerarChaveUnica();
         DalHelper.AddChaveUnica(validador.Id, chave);
         Chave chaveUnica = new(chave);
         var url = validador.Ip.Replace("-", ".");
         await validadorIntegracao.EnviarChaveUnica($"https://{url}/Chave", chaveUnica);
+
+        DalHelper.AddValidador(validador);
 
         return Ok($"Validador {validador.Nome} inserido com sucesso");
       }
